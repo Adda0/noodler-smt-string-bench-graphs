@@ -132,7 +132,7 @@ def sanity_check(df):
 
 
 # generate evaluation
-def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
+def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=None):
 
     #print(f"time:  {datetime.datetime.now()}")
     print(f"# of formulae: {len(df)}")
@@ -149,14 +149,17 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
 
     for col in df.columns:
         if re.search('-runtime$', col):
+            timeouts_num = df[col].isna().sum()
+            time_sum = df[col].sum()
             summary_times[col] = dict()
-            summary_times[col]['sum'] = df[col].sum()
+            summary_times[col]['sum'] = time_sum
+            summary_times[col]['sum_with_timeouts'] = time_sum + timeout_time * timeouts_num
             summary_times[col]['max'] = df[col].max()
             summary_times[col]['min'] = df[col].min()
             summary_times[col]['mean'] = df[col].mean()
             summary_times[col]['median'] = df[col].median()
             summary_times[col]['std'] = df[col].std()
-            summary_times[col]['timeouts'] = df[col].isna().sum()
+            summary_times[col]['timeouts'] = timeouts_num
 
     df_summary_times = pd.DataFrame(summary_times).transpose()
 
@@ -171,6 +174,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
         tab_interesting.append([row_dict['name'],
                                 # row_dict['min'],
                                 row_dict['sum'],
+                                row_dict['sum_with_timeouts'],
                                 row_dict['max'],
                                 row_dict['mean'],
                                 row_dict['median'],
@@ -178,7 +182,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
                                 row_dict['timeouts'],
                                 unknown_row["unknowns"]])
 
-    headers = ["method", "sum", "max", "mean", "median", "std. dev", "timeouts", "unknowns"]
+    headers = ["method", "sum", "sum with timeouts", "max", "mean", "median", "std. dev", "timeouts", "unknowns"]
     print("Table 1: " + benchmark_name)
     print(tab.tabulate(tab_interesting, headers=headers, tablefmt="github"))
     print()
