@@ -150,6 +150,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
     for col in df.columns:
         if re.search('-runtime$', col):
             summary_times[col] = dict()
+            summary_times[col]['sum'] = df[col].sum()
             summary_times[col]['max'] = df[col].max()
             summary_times[col]['min'] = df[col].min()
             summary_times[col]['mean'] = df[col].mean()
@@ -169,6 +170,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
         row_dict.update({'name': i})
         tab_interesting.append([row_dict['name'],
                                 # row_dict['min'],
+                                row_dict['sum'],
                                 row_dict['max'],
                                 row_dict['mean'],
                                 row_dict['median'],
@@ -176,7 +178,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
                                 row_dict['timeouts'],
                                 unknown_row["unknowns"]])
 
-    headers = ["method", "max", "mean", "median", "std. dev", "timeouts", "unknowns"]
+    headers = ["method", "sum", "max", "mean", "median", "std. dev", "timeouts", "unknowns"]
     print("Table 1: " + benchmark_name)
     print(tab.tabulate(tab_interesting, headers=headers, tablefmt="github"))
     print()
@@ -320,7 +322,7 @@ def gen_evaluation(df, main_tool, all_tools, benchmark_name=None):
     #print("\n\n\n\n\n")
 
 
-def create_dfs(files):
+def create_dfs(files, noodler_version, noodler_underapprox_version):
     dfs = dict()
     dfs_normal = dict()
     dfs_underapprox = {}
@@ -329,18 +331,26 @@ def create_dfs(files):
         df = read_file(file)
         df["benchmark"] = benchmark_name
         if benchmark_name in ["leetcode"]:
+            df["z3-noodler-common-runtime"] = df[noodler_version + "-runtime"]
+            df["z3-noodler-common-result"] = df[noodler_version + "-result"]
             dfs_underapprox[benchmark_name] = df
             dfs_normal[benchmark_name] = df
         if benchmark_name in ["kaluza"]:
+            df["z3-noodler-common-runtime"] = df[noodler_underapprox_version + "-runtime"]
+            df["z3-noodler-common-result"] = df[noodler_underapprox_version + "-result"]
             dfs_underapprox[benchmark_name] = df
         else:
+            df["z3-noodler-common-runtime"] = df[noodler_version + "-runtime"]
+            df["z3-noodler-common-result"] = df[noodler_version + "-result"]
             dfs_normal[benchmark_name] = df
         dfs[benchmark_name] = df
+    df_normal = pd.concat(dfs_normal)
+    sanity_check(df_normal)
+    dfs_normal["kaluza"] = dfs["kaluza"]
     df_all = pd.concat(dfs_normal)
-    sanity_check(df_all)
     df_underapprox = pd.concat(dfs_underapprox)
 
-    return dfs, df_all, df_underapprox
+    return dfs, df_all, df_normal, df_underapprox
 
 
 BENCHMARKS = [
@@ -357,25 +367,26 @@ BENCHMARKS_DATA_FILE_NAME = "to120.csv"
 
 FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in BENCHMARKS]
 
+NOODLER_COMMON = "z3-noodler-common"
 NOODLER = "z3-noodler-69838f6"
 NOODLER_UNDERAPPROX = "z3-noodler-69838f6-underapprox"
 # NOODLER_OLD = "z3-noodler-bab4579"
 # NOODLER_OLD = "noodler"
 NOODLER_OLD = ""
 
-dfs, df_all, df_underapprox = create_dfs(FILES)
+dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, NOODLER, NOODLER_UNDERAPPROX)
 
 #if NOODLER_OLD:
-#  gen_evaluation(df_all, NOODLER, [NOODLER, NOODLER_OLD, "cvc5", "z3"])
+#  gen_evaluation(df_normal, NOODLER, [NOODLER, NOODLER_OLD, "cvc5", "z3"])
 #else:
-#  gen_evaluation(df_all, NOODLER, [NOODLER, "cvc5", "z3"])
+#  gen_evaluation(df_normal, NOODLER, [NOODLER, "cvc5", "z3"])
 
 with open("statistics", "w+") as out_file:
     out_stream = contextlib.redirect_stdout(out_file)
 
     with out_stream:
-        gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["leetcode"])], NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name="quick")
-        gen_evaluation(df_all, NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name="all_normal")
+        gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name="quick")
+        gen_evaluation(df_normal, NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name="normal_all")
         gen_evaluation(df_underapprox, NOODLER_UNDERAPPROX, [NOODLER_UNDERAPPROX, "cvc5", "z3"], benchmark_name="kaluza_leetcode_underapprox")
         for benchmark in BENCHMARKS:
             if benchmark in ["kaluza"]:
@@ -385,6 +396,8 @@ with open("statistics", "w+") as out_file:
                 gen_evaluation(dfs[benchmark], NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name=benchmark)
             else:
                 gen_evaluation(dfs[benchmark], NOODLER, [NOODLER, "cvc5", "z3"], benchmark_name=benchmark)
+
+        gen_evaluation(df_all, NOODLER_COMMON, [NOODLER_COMMON, "cvc5", "z3"], benchmark_name="all")  # FIXME: Evaluate Noodler_underapprox for kaluza.
 
 
 
