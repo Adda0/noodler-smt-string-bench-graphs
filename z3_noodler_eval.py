@@ -40,7 +40,7 @@ def read_file(filename):
 
 
 # For printing scatter plots
-def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, width=6, height=6, clamp=True, tickCount=5):
+def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, width=6, height=6, clamp=True, tickCount=5, show_legend=False):
     assert len(domain) == 2
 
     POINT_SIZE = 1.0
@@ -62,7 +62,7 @@ def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, widt
     # generate scatter plot
     scatter = p9.ggplot(df)
     scatter += p9.aes(x=xcol, y=ycol, color="benchmark")
-    scatter += p9.geom_point(size=POINT_SIZE, na_rm=True)
+    scatter += p9.geom_point(size=POINT_SIZE, na_rm=True, show_legend=show_legend)
     scatter += p9.labs(x=xname, y=yname)
     scatter += p9.theme(legend_key_width=2)
     scatter += p9.scale_color_hue(l=0.4, s=0.9, h=0.1)
@@ -84,7 +84,10 @@ def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, widt
     scatter += p9.theme(figure_size=(width, height))
     scatter += p9.theme(axis_text=p9.element_text(size=24, color="black"))
     scatter += p9.theme(axis_title=p9.element_text(size=24, color="black"))
-    scatter += p9.theme(legend_text=p9.element_text(size=12))
+    scatter += p9.theme(legend_text=p9.element_text(size=18))
+    scatter += p9.theme(legend_title=p9.element_text(size=18))
+    if not show_legend:
+        scatter += p9.theme(legend_position='none')
 
     # generate additional lines
     scatter += p9.geom_abline(intercept=0, slope=1, linetype=DASH_PATTERN)  # diagonal
@@ -258,8 +261,10 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
       if t == main_tool:
         continue
       to_cmp2.append({'x': main_tool, 'y': t,
-                'xname': NOODLER[:NOODLER.rfind("-")], 'yname': t,
-                'max': TIMEOUT_VAL, 'tickCount': 3})
+          #'xname': NOODLER[:NOODLER.rfind("-")] ,
+          'xname': "Tool",
+          'yname': t,
+          'max': TIMEOUT_VAL, 'tickCount': 3})
       
     # to_cmp2 = [{'x': "noodler", 'y': "cvc4",
     #             'xname': 'Noodler', 'yname': 'CVC4',
@@ -287,17 +292,37 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
             params['filename'] += params['x'] + "_vs_" + params['y'] + ".pdf"
 
     size = 8
-    plot_list = [(params['x'],
-                  params['y'],
-                  params['filename'],
-                  scatter_plot(df,
-                               xcol=params['x'] + '-runtime',
-                               ycol=params['y'] + '-runtime',
-                               xname=params['xname'], yname=params['yname'],
-                               domain=[TIME_MIN, params['max']],
-                               tickCount=params['tickCount'],
-                               log=True, width=size, height=size)) for params
-                 in to_cmp2]
+    plot_list = [
+        ( params['x'],
+          params['y'],
+          params['filename'],
+          scatter_plot(
+              df,
+              xcol=params['x'] + '-runtime',
+              ycol=params['y'] + '-runtime',
+              xname=params['xname'], yname=params['yname'],
+              domain=[TIME_MIN, params['max']],
+              tickCount=params['tickCount'],
+              log=True, width=size, height=size
+          )
+        )
+        for params in to_cmp2]
+    plot_list += [
+    ( params['x'],
+      params['y'],
+      params['filename'].split('.')[0] + "_legend.pdf",
+      scatter_plot(
+          df,
+          xcol=params['x'] + '-runtime',
+          ycol=params['y'] + '-runtime',
+          xname=params['xname'], yname=params['yname'],
+          domain=[TIME_MIN, params['max']],
+          tickCount=params['tickCount'],
+          show_legend=True,
+          log=True, width=size, height=size
+      )
+    )
+    for params in to_cmp2]
 
     #print("\n\n")
     #print("Generating plots...")
