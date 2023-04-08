@@ -1,3 +1,4 @@
+Benchmark: quick
 # of formulae: 4474
 Table 1: quick
 | method             |     sum |   sum with timeouts |    max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -6,12 +7,20 @@ Table 1: quick
 | cvc5               | 2528.2  |             15728.2 | 111.79 | 0.579331  |     0.01 |    5.4607  |        110 |          0 |
 | z3                 | 1002.93 |             28962.9 |  87.46 | 0.236484  |     0.02 |    2.74962 |        233 |          0 |
 
+Table basic time: quick
+| method             |   T/Os |    time |   time-T/Os |
+|--------------------|--------|---------|-------------|
+| z3-noodler-3f6d642 |      7 |  1062.4 |      222.4  |
+| cvc5               |    110 | 15728.2 |     2528.2  |
+| z3                 |    233 | 28962.9 |     1002.93 |
+
 Table 2: quick
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |   1190 |             108 |    2070 |                5 |
 | z3-runtime   |   1871 |             231 |    1055 |                5 |
 
+Benchmark: normal_all
 # of formulae: 7126
 Table 1: normal_all
 | method             |     sum |   sum with timeouts |    max |     mean |   median |   std. dev |   timeouts |   unknowns |
@@ -20,12 +29,20 @@ Table 1: normal_all
 | cvc5               | 2666.2  |            15866.2  | 111.79 | 0.380017 |     0.01 |    4.31437 |        110 |          0 |
 | z3                 | 1145.31 |            29105.3  |  87.46 | 0.166156 |     0.02 |    2.34091 |        233 |          0 |
 
+Table basic time: normal_all
+| method             |   T/Os |     time |   time-T/Os |
+|--------------------|--------|----------|-------------|
+| z3-noodler-3f6d642 |     41 |  5946.68 |     1026.68 |
+| cvc5               |    110 | 15866.2  |     2666.2  |
+| z3                 |    233 | 29105.3  |     1145.31 |
+
 Table 2: normal_all
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |   2413 |             108 |    2846 |               39 |
 | z3-runtime   |   2299 |             231 |    2339 |               39 |
 
+Benchmark: underapprox
 # of formulae: 19432
 Table 1: underapprox
 | method                         |     sum |   sum with timeouts |   max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -34,12 +51,20 @@ Table 1: underapprox
 | cvc5                           | 1041.71 |             1761.71 | 38.28 | 0.0536245 |     0    |   0.737857 |          6 |          0 |
 | z3                             |  858.46 |            23418.5  | 12.94 | 0.0446092 |     0.02 |   0.30633  |        188 |          0 |
 
+Table basic time: underapprox
+| method                         |   T/Os |     time |   time-T/Os |
+|--------------------------------|--------|----------|-------------|
+| z3-noodler-3f6d642-underapprox |    192 | 24237.2  |     1197.17 |
+| cvc5                           |      6 |  1761.71 |     1041.71 |
+| z3                             |    188 | 23418.5  |      858.46 |
+
 Table 2: underapprox
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |    771 |               0 |   10427 |              186 |
 | z3-runtime   |   4260 |              51 |    5929 |               55 |
 
+Benchmark: slog
 # of formulae: 1976
 Table 1: slog
 | method             |    sum |   sum with timeouts |   max |       mean |   median |   std. dev |   timeouts |   unknowns |
@@ -48,12 +73,20 @@ Table 1: slog
 | cvc5               |  11.69 |               11.69 |  0.12 | 0.00591599 |     0    | 0.00983257 |          0 |          0 |
 | z3                 | 337.05 |             4297.05 | 36.56 | 0.173469   |     0.02 | 1.50847    |         33 |          0 |
 
+Table basic time: slog
+| method             |   T/Os |    time |   time-T/Os |
+|--------------------|--------|---------|-------------|
+| z3-noodler-3f6d642 |      0 |   39.9  |       39.9  |
+| cvc5               |      0 |   11.69 |       11.69 |
+| z3                 |     33 | 4297.05 |      337.05 |
+
 Table 2: slog
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |     37 |               0 |    1285 |                0 |
 | z3-runtime   |    526 |              33 |     582 |                0 |
 
+Benchmark: slent
 # of formulae: 1128
 Table 1: slent
 | method             |     sum |   sum with timeouts |    max |     mean |   median |   std. dev |   timeouts |   unknowns |
@@ -62,12 +95,20 @@ Table 1: slent
 | cvc5               | 1392.63 |             4512.63 | 105.41 | 1.26373  |     0.01 |    7.49589 |         26 |          0 |
 | z3                 |  552.97 |             9312.97 |  87.46 | 0.524142 |     0.02 |    5.06078 |         73 |          0 |
 
+Table basic time: slent
+| method             |   T/Os |    time |   time-T/Os |
+|--------------------|--------|---------|-------------|
+| z3-noodler-3f6d642 |      7 |  996.88 |      156.88 |
+| cvc5               |     26 | 4512.63 |     1392.63 |
+| z3                 |     73 | 9312.97 |      552.97 |
+
 Table 2: slent
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |    240 |              24 |     555 |                5 |
 | z3-runtime   |    287 |              71 |     372 |                5 |
 
+Benchmark: norn
 # of formulae: 1027
 Table 1: norn
 | method             |    sum |   sum with timeouts |    max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -76,12 +117,20 @@ Table 1: norn
 | cvc5               | 950.96 |            11031    | 111.79 | 1.00844   |     0.03 | 8.3615     |         84 |          0 |
 | z3                 |  78.74 |            15318.7  |  16.39 | 0.0874889 |     0.04 | 0.630474   |        127 |          0 |
 
+Table basic time: norn
+| method             |   T/Os |     time |   time-T/Os |
+|--------------------|--------|----------|-------------|
+| z3-noodler-3f6d642 |      0 |    19.64 |       19.64 |
+| cvc5               |     84 | 11031    |      950.96 |
+| z3                 |    127 | 15318.7  |       78.74 |
+
 Table 2: norn
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |    591 |              84 |     223 |                0 |
 | z3-runtime   |    728 |             127 |      99 |                0 |
 
+Benchmark: leetcode
 # of formulae: 2652
 Table 1: leetcode
 | method             |    sum |   sum with timeouts |    max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -90,12 +139,20 @@ Table 1: leetcode
 | cvc5               | 138    |              138    |   0.74 | 0.0520362 |     0.02 |  0.0776358 |          0 |          0 |
 | z3                 | 142.38 |              142.38 |  75.16 | 0.0536878 |     0.02 |  1.46072   |          0 |          0 |
 
+Table basic time: leetcode
+| method             |   T/Os |    time |   time-T/Os |
+|--------------------|--------|---------|-------------|
+| z3-noodler-3f6d642 |     34 | 4884.28 |      804.28 |
+| cvc5               |      0 |  138    |      138    |
+| z3                 |      0 |  142.38 |      142.38 |
+
 Table 2: leetcode
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |   1223 |               0 |     776 |               34 |
 | z3-runtime   |    428 |               0 |    1284 |               34 |
 
+Benchmark: sygus_qgen
 # of formulae: 343
 Table 1: sygus_qgen
 | method             |    sum |   sum with timeouts |   max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -104,12 +161,20 @@ Table 1: sygus_qgen
 | cvc5               | 172.92 |              172.92 | 24.18 | 0.50414   |     0.12 | 1.74104    |          0 |          0 |
 | z3                 |  34.17 |               34.17 | 12.85 | 0.099621  |     0.05 | 0.692317   |          0 |          0 |
 
+Table basic time: sygus_qgen
+| method             |   T/Os |   time |   time-T/Os |
+|--------------------|--------|--------|-------------|
+| z3-noodler-3f6d642 |      0 |   5.98 |        5.98 |
+| cvc5               |      0 | 172.92 |      172.92 |
+| z3                 |      0 |  34.17 |       34.17 |
+
 Table 2: sygus_qgen
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |    322 |               0 |       7 |                0 |
 | z3-runtime   |    330 |               0 |       2 |                0 |
 
+Benchmark: kaluza_underapprox
 # of formulae: 19432
 Table 1: kaluza_underapprox
 | method                         |     sum |   sum with timeouts |   max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -118,12 +183,20 @@ Table 1: kaluza_underapprox
 | cvc5                           | 1041.71 |             1761.71 | 38.28 | 0.0536245 |     0    |   0.737857 |          6 |          0 |
 | z3                             |  858.46 |            23418.5  | 12.94 | 0.0446092 |     0.02 |   0.30633  |        188 |          0 |
 
+Table basic time: kaluza_underapprox
+| method                         |   T/Os |     time |   time-T/Os |
+|--------------------------------|--------|----------|-------------|
+| z3-noodler-3f6d642-underapprox |    192 | 24237.2  |     1197.17 |
+| cvc5                           |      6 |  1761.71 |     1041.71 |
+| z3                             |    188 | 23418.5  |      858.46 |
+
 Table 2: kaluza_underapprox
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |
 |--------------|--------|-----------------|---------|------------------|
 | cvc5-runtime |    771 |               0 |   10427 |              186 |
 | z3-runtime   |   4260 |              51 |    5929 |               55 |
 
+Benchmark: all
 # of formulae: 26558
 Table 1: all
 | method            |     sum |   sum with timeouts |    max |      mean |   median |   std. dev |   timeouts |   unknowns |
@@ -131,6 +204,13 @@ Table 1: all
 | z3-noodler-common | 2223.85 |             30183.8 | 111.23 | 0.0844767 |     0.02 |    1.56371 |        233 |          0 |
 | cvc5              | 3707.91 |             17627.9 | 111.79 | 0.140228  |     0    |    2.31498 |        116 |          0 |
 | z3                | 2003.77 |             52523.8 |  87.46 | 0.0766641 |     0.02 |    1.23166 |        421 |          0 |
+
+Table basic time: all
+| method            |   T/Os |    time |   time-T/Os |
+|-------------------|--------|---------|-------------|
+| z3-noodler-common |    233 | 30183.8 |     2223.85 |
+| cvc5              |    116 | 17627.9 |     3707.91 |
+| z3                |    421 | 52523.8 |     2003.77 |
 
 Table 2: all
 | method       |   wins |   wins-timeouts |   loses |   loses-timeouts |

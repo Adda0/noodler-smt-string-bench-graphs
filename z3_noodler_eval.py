@@ -120,7 +120,7 @@ def matrix_plot(list_of_plots, cols):
 
 # table to LaTeX file
 def table_to_file(table, headers, out_file):
-    with open(f"plots/{out_file}.tex", mode='w') as fl:
+    with open(f"tables/{out_file}.tex", mode='w+') as fl:
         print(tab.tabulate(table, headers=headers, tablefmt="latex"), file=fl)
 
 def sanity_check(df):
@@ -135,6 +135,7 @@ def sanity_check(df):
 def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=None):
 
     #print(f"time:  {datetime.datetime.now()}")
+    print(f"Benchmark: {benchmark_name}")
     print(f"# of formulae: {len(df)}")
 
     summary_times = dict()
@@ -186,6 +187,26 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     print("Table 1: " + benchmark_name)
     print(tab.tabulate(tab_interesting, headers=headers, tablefmt="github"))
     print()
+    table_to_file(tab_interesting, headers=headers, out_file=f"table1-{benchmark_name}")
+
+    tab_basic_time = []
+    for i in all_tools:
+        row = df_summary_times.loc[i + '-runtime']
+        unknown_row = dict(df_summary_times.loc[i + '-result'])
+        row_dict = dict(row)
+        row_dict.update({'name': i})
+        tab_basic_time.append([
+            row_dict['name'],
+            row_dict['timeouts'],
+            row_dict['sum_with_timeouts'],
+            row_dict['sum'],
+        ])
+
+    headers_basic_time = ["method", "T/Os", "time", "time-T/Os"]
+    print("Table basic time: " + benchmark_name)
+    print(tab.tabulate(tab_basic_time, headers=headers_basic_time, tablefmt="github"))
+    print()
+    table_to_file(tab_basic_time, headers=headers_basic_time, out_file=f"table-basic-time-{benchmark_name}")
 
     # sanitizing NAs
     for col in df.columns:
@@ -222,7 +243,7 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     headers_wins = ["method", "wins", "wins-timeouts", "loses", "loses-timeouts"]
     print("Table 2: " + benchmark_name)
     print(tab.tabulate(tab_wins, headers=headers_wins, tablefmt="github"))
-    #table_to_file(tab_wins, headers_wins, out_prefix + "_table1right")
+    table_to_file(tab_wins, headers_wins, f"table2-{benchmark_name}")
     print()
 
     #print("##############    other claimed results    ###############")
