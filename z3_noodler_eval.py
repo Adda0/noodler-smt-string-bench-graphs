@@ -429,6 +429,7 @@ class Tool(enum.Enum):
     z3 = "z3"
     z3_str_re = "z3strRE"
     z3_trau = "z3-trau"
+    z3_str_4 = "z3str4"
     ostrich = "ostrich"
 
 dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
@@ -437,22 +438,28 @@ with open("statistics", "w+") as out_file:
     out_stream = contextlib.redirect_stdout(out_file)
 
     with out_stream:
-        other_tools = [Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_trau, Tool.ostrich]
+        other_tools = [Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_trau, Tool.z3_str_4]
         all_tools = [Tool.noodler] + other_tools
         all_tools_common = [Tool.noodler_common] + other_tools
         all_tools_underapprox = [Tool.noodler_underapprox] + other_tools
-        gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], Tool.noodler, all_tools, benchmark_name="quick")
-        gen_evaluation(df_normal, Tool.noodler, all_tools, benchmark_name="normal_all")
+        gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], Tool.noodler, all_tools + [Tool.ostrich], benchmark_name="quick")
+        gen_evaluation(df_normal, Tool.noodler, all_tools + [Tool.ostrich], benchmark_name="normal_all")
         gen_evaluation(df_underapprox, Tool.noodler_underapprox, all_tools_underapprox, benchmark_name="underapprox")
         for benchmark in BENCHMARKS:
             if benchmark in ["kaluza"]:
                 gen_evaluation(dfs[benchmark], Tool.noodler_underapprox, all_tools_underapprox, benchmark_name=benchmark + "_underapprox")
             elif benchmark in ["leetcode"]:
-                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
+                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools + [Tool.ostrich], benchmark_name=benchmark)
             else:
-                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
+                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools + [Tool.ostrich], benchmark_name=benchmark)
 
         gen_evaluation(df_all, Tool.noodler_common, all_tools_common, benchmark_name="all")
+
+        # Evaluate experiments for OSTRICH.
+        gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["kaluza"])], Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
+
+        # Evaluate expeirments for Z3-trau.
+        gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")
 
 
 
