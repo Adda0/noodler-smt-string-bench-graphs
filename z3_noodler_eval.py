@@ -84,8 +84,9 @@ def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, widt
     scatter += p9.theme(figure_size=(width, height))
     scatter += p9.theme(axis_text=p9.element_text(size=24, color="black"))
     scatter += p9.theme(axis_title=p9.element_text(size=24, color="black"))
-    scatter += p9.theme(legend_text=p9.element_text(size=18))
-    scatter += p9.theme(legend_title=p9.element_text(size=18))
+    legend_text_size = 20
+    scatter += p9.theme(legend_title=p9.element_text(size=legend_text_size),
+                        legend_text=p9.element_text(size=legend_text_size))
     if not show_legend:
         scatter += p9.theme(legend_position='none')
 
