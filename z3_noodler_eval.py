@@ -151,6 +151,109 @@ def sanity_check(df):
     return pt
 
 
+def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000):
+    concat = pd.DataFrame()
+    tseries1 = pd.Series(name="vbs1")
+    tseries2 = pd.Series(name="vbs2")
+    m = 0
+
+    for t in df.columns:
+        tseries1 = pd.Series(df[t].tolist())
+        tseries1 = tseries1[start:]
+        concat.insert(0, t.rsplit('-', 1)[0], tseries1)
+
+    inc = int((end-start)/5)
+    plt = concat.plot.line(xticks=range(start,end,inc), figsize=(6,6), grid=True, fontsize=10, lw=2)
+    plt.set_yscale('log')
+    plt.set_xlabel("instances", fontsize=16)
+    plt.set_ylabel("runtime [s]", fontsize=16)
+    plt.legend(loc=6,prop={"size": 8})
+    plt.figure.savefig(f"graphs/fig-cactus-{file_name}.pdf", dpi=1000)
+
+def gen_cactus_plot(df, tools1, tools2, legend1, legend2):
+    concat = pd.DataFrame()
+    tseries1 = pd.Series(name="vbs1")
+    tseries2 = pd.Series(name="vbs2")
+    m = 0
+    start = 0
+    #start = 19000
+
+    for t in tools1:
+      #proj_t = df[t+"-runtime"]
+      #tseries1 = tseries1.combine(proj_t, min, fill_value=TIMEOUT_VAL)
+      #tseries1 = tseries1[tseries1 < TIMEOUT_VAL]
+      #tseries1 = tseries1.sort_values()
+      tseries1 = pd.Series(df[t+"-runtime"].tolist())
+      tseries1 = tseries1[start:]
+      if t == too:
+        concat.insert(0, "Noodler", tseries1)
+      else:
+        concat.insert(0, t, tseries1)
+
+    # for t in tools2:
+    #   proj_t = df[t+"-runtime"]
+    #   proj_t = proj_t.rename("vbs2")
+    #   tseries2 = tseries2.combine(proj_t, min, fill_value=TIMEOUT_VAL)
+
+    # tseries1 = tseries1[tseries1 < TIMEOUT_VAL]
+    # tseries1 = tseries1.sort_values()
+    # tseries1 = pd.Series(tseries1.tolist())
+    # tseries1 = tseries1[start:]
+
+    # tseries2 = tseries2[tseries2 < TIMEOUT_VAL]
+    # tseries2 = tseries2.sort_values()
+    # tseries2 = pd.Series(tseries2.tolist())
+    # tseries2 = tseries2[start:]
+
+    # concat.insert(0, "VBS({0})".format(",".join(legend1)), tseries1)
+    # concat.insert(0, "VBS({0})".format(",".join(legend2)), tseries2)
+
+    inc = int((end-start)/5)
+    plt = concat.plot.line(xticks=range(start,end,inc), figsize=(6,6), grid=True, fontsize=10, lw=2)
+    plt.set_xlabel("instances", fontsize=16)
+    plt.set_ylabel("runtime [s]", fontsize=16)
+    plt.legend(loc=6,prop={"size": 8})
+    plt.figure.savefig("graphs/fig-cactus.pdf", dpi=1000)
+
+
+def gen_vbs_plot(df, tools1, tools2, legend1, legend2):
+    concat = pd.DataFrame()
+    tseries1 = pd.Series(name="vbs1")
+    tseries2 = pd.Series(name="vbs2")
+    m = 0
+    start = 19526
+
+    for t in tools1:
+        proj_t = df[t + "-runtime"]
+        proj_t = proj_t.rename("vbs1")
+        tseries1 = tseries1.combine(proj_t, min, fill_value=TIMEOUT_VAL)
+
+    for t in tools2:
+        proj_t = df[t + "-runtime"]
+        proj_t = proj_t.rename("vbs2")
+        tseries2 = tseries2.combine(proj_t, min, fill_value=TIMEOUT_VAL)
+
+    tseries1 = tseries1[tseries1 < TIMEOUT_VAL]
+    tseries1 = tseries1.sort_values()
+    tseries1 = pd.Series(tseries1.tolist())
+    tseries1 = tseries1[start:]
+
+    tseries2 = tseries2[tseries2 < TIMEOUT_VAL]
+    tseries2 = tseries2.sort_values()
+    tseries2 = pd.Series(tseries2.tolist())
+    tseries2 = tseries2[start:]
+
+    concat.insert(0, "VBS({0})".format(",".join(legend1)), tseries1)
+    concat.insert(0, "VBS({0})".format(",".join(legend2)), tseries2)
+
+    inc = int((20023 - start) / 10)
+    plt = concat.plot.line(xticks=range(start, 20023, inc), figsize=(15, 6), grid=True, fontsize=10, lw=3)
+    plt.set_xlabel("instances", fontsize=20)
+    plt.set_ylabel("runtime [s]", fontsize=20)
+    plt.legend(prop={"size": 12})
+    plt.figure.savefig("/home/fig-vbs.pdf", dpi=1000)
+    print(plt)
+
 # generate evaluation
 def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=None):
 
@@ -422,7 +525,13 @@ def create_dfs(files, noodler_version, noodler_underapprox_version):
 
 
 
-
+class Benchmark(enum.Enum):
+    slog = "slog"
+    slent = "slent"
+    norn = "norn"
+    leetcode = "leetcode"
+    sygus_qgen = "sygus_qgen"
+    kaluza = "kaluza"
 
 
 BENCHMARKS = [
@@ -451,8 +560,14 @@ class Tool(enum.Enum):
     ostrich = "ostrich"
 
 
-def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool], file_name: str):
-    dfs_all = pd.concat(dfs)
+def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool], benchmarks: list[Benchmark], file_name: str):
+    new_dfs = {}
+    benchmark_names = [benchmark.value for benchmark in benchmarks]
+    for benchmark, df in dfs.items():
+        if benchmark not in benchmark_names:
+            continue
+        new_dfs[benchmark] = df
+    dfs_all = pd.concat(new_dfs)
 
     # Add virtual best solver.
     tool_runtime_names = [f"{tool.value}-runtime" for tool in tools_for_virtual_best_solver]
@@ -471,32 +586,46 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
     #print()
     dfs_tools.to_csv(f"csvs/cactus_plot_{file_name}.csv", index=False)
 
-    for col in dfs_all.columns:
-        if re.search('-result$', col):
-            pass
+    return dfs_tools
 
 
 
 dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
 
 # Generate CSVs for cactus plot.
-generate_cactus_plot_csvs(dfs,
+df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
                           file_name="cvc5_z3")
-generate_cactus_plot_csvs(dfs,
+generate_cactus_plot(df_cactus, "quick_cvc5_z3_start_0", 0, 5000)
+df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
                           file_name="cvc5_z3_noodler")
+generate_cactus_plot(df_cactus, "quick_cvc5_z3_noodler_start_0", 0, 5000)
 
-generate_cactus_plot_csvs(dfs,
+
+df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen, Benchmark.leetcode, Benchmark.kaluza],
                           file_name="all_without_noodler")
-generate_cactus_plot_csvs(dfs,
+generate_cactus_plot(df_cactus, "all_cvc5_z3_start_0", 0, 27_000)
+generate_cactus_plot(df_cactus, "all_cvc5_z3_start_15k", 15_000, 27_000)
+generate_cactus_plot(df_cactus, "all_cvc5_z3_start_21k", 21_000, 27_000)
+df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen, Benchmark.leetcode, Benchmark.kaluza],
                           file_name="all_with_noodler")
+generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_0", 0, 27_000)
+generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_15k", 15_000, 27_000)
+generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_21k", 21_000, 27_000)
+
+exit()
+
 
 with open("statistics", "w+") as out_file:
     out_stream = contextlib.redirect_stdout(out_file)
@@ -524,6 +653,7 @@ with open("statistics", "w+") as out_file:
 
         # Evaluate experiments for Z3-trau.
         gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")
+
 
 
 
