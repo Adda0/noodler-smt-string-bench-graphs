@@ -153,8 +153,6 @@ def sanity_check(df):
 
 def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000):
     concat = pd.DataFrame()
-    tseries1 = pd.Series(name="vbs1")
-    tseries2 = pd.Series(name="vbs2")
     m = 0
 
     for t in df.columns:
@@ -207,7 +205,6 @@ def gen_vbs_plot(df, tools1, tools2, legend1, legend2):
     plt.set_ylabel("runtime [s]", fontsize=20)
     plt.legend(prop={"size": 12})
     plt.figure.savefig("/home/fig-vbs.pdf", dpi=1000)
-    print(plt)
 
 
 def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=None):
@@ -223,23 +220,33 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
             summary_times[col] = dict()
             df[col] = df[col].str.strip()
             summary_times[col]['unknowns'] = df[df[col] == "unknown"].shape[0] #[df[col] == "unknown"].shape[0]
+            summary_times[col]['errors'] = df[df[col] == "ERR"].shape[0] #[df[col] == "unknown"].shape[0]
+            summary_times[col]['timeouts'] = df[df[col] == "TO"].shape[0] #[df[col] == "unknown"].shape[0]
+
+    #print(summary_times)
 
     # Remove unknowns
     df = df.drop(df[df[main_tool.value + "-result"] == "unknown"].index)
 
     for col in df.columns:
         if re.search('-runtime$', col):
-            timeouts_num = df[col].isna().sum()
+            col_tool_name = col.rsplit('-', 1)[0]
+            col_result_name = f"{col_tool_name}-result"
+            timeouts_err_unknown_num = df[col].isna().sum()
             time_sum = df[col].sum()
             summary_times[col] = dict()
             summary_times[col]['sum'] = time_sum
-            summary_times[col]['sum_with_timeouts'] = time_sum + timeout_time * timeouts_num
+            summary_times[col]['sum_with_timeouts'] = time_sum + timeout_time * timeouts_err_unknown_num
             summary_times[col]['max'] = df[col].max()
             summary_times[col]['min'] = df[col].min()
             summary_times[col]['mean'] = df[col].mean()
             summary_times[col]['median'] = df[col].median()
             summary_times[col]['std'] = df[col].std()
-            summary_times[col]['timeouts'] = timeouts_num
+            summary_times[col]['timeouts'] = summary_times[col_result_name]["timeouts"]
+            summary_times[col]['errors'] = summary_times[col_result_name]["errors"]
+            summary_times[col]['unknowns'] = summary_times[col_result_name]["unknowns"]
+
+    #print(summary_times)
 
     df_summary_times = pd.DataFrame(summary_times).transpose()
 
@@ -248,7 +255,6 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     tab_interesting = []
     for i in all_tools:
         row = df_summary_times.loc[i.value + '-runtime']
-        unknown_row = dict(df_summary_times.loc[i.value + '-result'])
         row_dict = dict(row)
         row_dict.update({'name': i.value})
         tab_interesting.append([row_dict['name'],
@@ -260,9 +266,11 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
                                 row_dict['median'],
                                 row_dict['std'],
                                 row_dict['timeouts'],
-                                unknown_row["unknowns"]])
+                                row_dict['errors'],
+                                row_dict['unknowns']
+                               ])
 
-    headers = ["method", "sum", "sum with timeouts", "max", "mean", "median", "std. dev", "timeouts", "unknowns"]
+    headers = ["method", "sum", "sum with timeouts", "max", "mean", "median", "std. dev", "timeouts", "errors", "unknowns"]
     print("Table 1: " + benchmark_name)
     print(tab.tabulate(tab_interesting, headers=headers, tablefmt="github"))
     print()
@@ -271,17 +279,18 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     tab_basic_time = []
     for i in all_tools:
         row = df_summary_times.loc[i.value + '-runtime']
-        unknown_row = dict(df_summary_times.loc[i.value + '-result'])
         row_dict = dict(row)
         row_dict.update({'name': i.value})
         tab_basic_time.append([
             row_dict['name'],
             row_dict['timeouts'],
+            row_dict['errors'],
+            row_dict['unknowns'],
             row_dict['sum_with_timeouts'],
             row_dict['sum'],
         ])
 
-    headers_basic_time = ["method", "T/Os", "time", "time-T/Os"]
+    headers_basic_time = ["Method", "T/Os", "Errors", "Unknowns", "Time", "Time-T/Os"]
     print("Table basic time: " + benchmark_name)
     print(tab.tabulate(tab_basic_time, headers=headers_basic_time, tablefmt="github"))
     print()
@@ -501,15 +510,6 @@ class Benchmark(ExtendedEnum):
     sygus_qgen = "sygus_qgen"
     kaluza = "kaluza"
 
-BENCHMARKS = [
-    "slog",
-    "slent",
-    "norn",
-    "leetcode",
-    "sygus_qgen",
-    "kaluza",
-]
-
 BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
 BENCHMARKS_DATA_FILE_NAME = "to120.csv"
 
@@ -539,6 +539,7 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
     # Add virtual best solver.
     tool_runtime_names = [f"{tool.value}-runtime" for tool in tools_for_virtual_best_solver]
     df_runtimes = dfs_all.loc[:, tool_runtime_names]
+    #print(df_runtimes)
     dfs_all["virtual-best-runtime"] = np.nanmin(df_runtimes, axis=1)
 
     tools_to_print_columns = [f"{tool.value}-runtime" for tool in tools_to_print]
@@ -578,20 +579,38 @@ df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           benchmarks=Benchmark.items(),
                           file_name="all_without_noodler")
-generate_cactus_plot(df_cactus, "all_cvc5_z3_start_0", 0, 27_000)
-generate_cactus_plot(df_cactus, "all_cvc5_z3_start_15k", 15_000, 27_000)
-generate_cactus_plot(df_cactus, "all_cvc5_z3_start_21k", 21_000, 27_000)
+generate_cactus_plot(df_cactus, "all_all_start_0", 0, 27_000)
+generate_cactus_plot(df_cactus, "all_all_start_15k", 15_000, 27_000)
+generate_cactus_plot(df_cactus, "all_all_start_21k", 21_000, 27_000)
 df_cactus = generate_cactus_plot_csvs(dfs,
                           tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
                           benchmarks=Benchmark.items(),
                           file_name="all_with_noodler")
-generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_0", 0, 27_000)
-generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_15k", 15_000, 27_000)
-generate_cactus_plot(df_cactus, "all_cvc5_z3_noodler_start_21k", 21_000, 27_000)
+generate_cactus_plot(df_cactus, "all_all_noodler_start_0", 0, 27_000)
+generate_cactus_plot(df_cactus, "all_all_noodler_start_15k", 15_000, 27_000)
+generate_cactus_plot(df_cactus, "all_all_noodler_start_21k", 21_000, 27_000)
 
-exit()
 
+
+df_cactus = generate_cactus_plot_csvs(dfs,
+                                      tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                                      tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                                      benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+                                      file_name="no_kaluza_without_noodler")
+generate_cactus_plot(df_cactus, "no_kaluza_all_start_0", 0, 8_000)
+generate_cactus_plot(df_cactus, "no_kaluza_all_start_4k", 4_000, 8_000)
+#generate_cactus_plot(df_cactus, "no_kaluza_all_start_15k", 15_000, 8_000)
+#generate_cactus_plot(df_cactus, "no_kaluza_all_start_21k", 21_000, _000)
+df_cactus = generate_cactus_plot_csvs(dfs,
+                                      tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                                      tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                                      benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+                                      file_name="no_kaluza_with_noodler")
+generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_0", 0, 8_000)
+generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_4k", 4_000, 8_000)
+#generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_15k", 15_000, 27_000)
+#generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_21k", 21_000, 27_000)
 
 with open("statistics", "w+") as out_file:
     out_stream = contextlib.redirect_stdout(out_file)
@@ -604,7 +623,7 @@ with open("statistics", "w+") as out_file:
         gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], Tool.noodler, all_tools + [Tool.ostrich], benchmark_name="quick")
         gen_evaluation(df_normal, Tool.noodler, all_tools + [Tool.ostrich], benchmark_name="normal_all")
         gen_evaluation(df_underapprox, Tool.noodler_underapprox, all_tools_underapprox, benchmark_name="underapprox")
-        for benchmark in BENCHMARKS:
+        for benchmark in Benchmark.values():
             if benchmark in ["kaluza"]:
                 gen_evaluation(dfs[benchmark], Tool.noodler_underapprox, all_tools_underapprox, benchmark_name=benchmark + "_underapprox")
             elif benchmark in ["leetcode"]:
