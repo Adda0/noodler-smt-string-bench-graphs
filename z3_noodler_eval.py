@@ -13,6 +13,7 @@ import pathlib
 import enum
 import sys
 
+import numpy as np
 import pandas as pd
 import re as re
 import tabulate as tab
@@ -35,9 +36,22 @@ def read_file(filename):
         filename,
         sep=";",
         comment="#",
-        na_values=['ERR', 'TO', 'MISSING'],
-        # na_values=['TO'],
+        #na_values=['ERR', 'TO', 'MISSING'],
+        #na_values=['TO'],
         )
+
+    for col in df_loc.columns:
+        if re.search(r"-result$", col):
+            df_loc[col] = df_loc[col].apply(lambda x: x.strip())
+            df_loc.loc[~df_loc[col].isin(['sat', 'unsat', 'unknown', 'TO']), col] = 'ERR'
+
+    for col in df_loc.columns:
+        if re.search(r"-runtime$", col):
+            [tool_name, _] = col.rsplit('-', 1)
+            tool_result_name = f"{tool_name}-result"
+            df_loc.loc[df_loc[tool_result_name].isin(['ERR', 'TO', 'unknown']), col] = np.nan
+            df_loc[col] = df_loc[col].astype(float)
+
     return df_loc
 
 
@@ -407,6 +421,10 @@ def create_dfs(files, noodler_version, noodler_underapprox_version):
     return dfs, df_all, df_normal, df_underapprox
 
 
+
+
+
+
 BENCHMARKS = [
     "slog",
     "slent",
@@ -432,7 +450,53 @@ class Tool(enum.Enum):
     z3_str_4 = "z3str4"
     ostrich = "ostrich"
 
+
+def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool], file_name: str):
+    dfs_all = pd.concat(dfs)
+
+    # Add virtual best solver.
+    tool_runtime_names = [f"{tool.value}-runtime" for tool in tools_for_virtual_best_solver]
+    df_runtimes = dfs_all.loc[:, tool_runtime_names]
+    dfs_all["virtual-best-runtime"] = np.nanmin(df_runtimes, axis=1)
+
+    tools_to_print_columns = [f"{tool.value}-runtime" for tool in tools_to_print]
+    tools_to_print_columns.append("virtual-best-runtime")
+    dfs_tools = dfs_all[tools_to_print_columns].reset_index(drop=True)
+    #print(dfs_tools)
+    for col in dfs_tools:
+        #print(col)
+        #print(dfs_tools[col])
+        #print(dfs_tools[col].sort_values(ignore_index=True))
+        dfs_tools[col] = dfs_tools[col].sort_values(ignore_index=True)
+    #print()
+    dfs_tools.to_csv(f"csvs/cactus_plot_{file_name}.csv", index=False)
+
+    for col in dfs_all.columns:
+        if re.search('-result$', col):
+            pass
+
+
+
 dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
+
+# Generate CSVs for cactus plot.
+generate_cactus_plot_csvs(dfs,
+                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+                          file_name="cvc5_z3")
+generate_cactus_plot_csvs(dfs,
+                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+                          file_name="cvc5_z3_noodler")
+
+generate_cactus_plot_csvs(dfs,
+                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          file_name="all_without_noodler")
+generate_cactus_plot_csvs(dfs,
+                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+                          file_name="all_with_noodler")
 
 with open("statistics", "w+") as out_file:
     out_stream = contextlib.redirect_stdout(out_file)
@@ -458,7 +522,7 @@ with open("statistics", "w+") as out_file:
         # Evaluate experiments for OSTRICH.
         gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["kaluza"])], Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
 
-        # Evaluate expeirments for Z3-trau.
+        # Evaluate experiments for Z3-trau.
         gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")
 
 
