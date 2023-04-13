@@ -17,8 +17,11 @@ import sys
 import numpy as np
 import pandas as pd
 import re as re
+
+import pylab
 import tabulate as tab
 import plotnine as p9
+import matplotlib as mplt
 import math
 import mizani.formatters as mizani
 import warnings
@@ -167,15 +170,22 @@ def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000, l
 
     plt = concat.plot.line(grid=True, fontsize=10, lw=2, figsize=(10, 3))
     ticks = np.linspace(start, end, 5, dtype=int)
-    labels_ticks = [end - tick for tick in ticks]
+    # labels_ticks = [end - tick for tick in ticks]
+    labels_ticks = ticks
     # plt.set_xticks(ticks, labels_ticks)
     plt.set_xticks(ticks)
+    plt.set_xlim([start, end])
     if logarithmic_y_axis:
         plt.set_yscale('log')
     plt.set_xlabel("Instances", fontsize=16)
     plt.set_ylabel("Runtime [s]", fontsize=16)
-    plt.legend(loc='upper right',prop={"size": 12})
-    plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
+    plt.get_legend().remove()
+    # plt.legend(loc='upper right',prop={"size": 12})
+    # plt.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
+    # plt.axvline(x=end)
+    figlegend = pylab.figure(figsize=(4,4))
+    figlegend.legend(plt.get_children(), concat.columns, loc='center', frameon=False)
+    figlegend.savefig(f"graphs/fig-cactus-{file_name}-legend.pdf", dpi=1000, bbox_inches='tight')
     plt.figure.savefig(f"graphs/fig-cactus-{file_name}.pdf", dpi=1000, bbox_inches='tight')
 
 
@@ -623,6 +633,12 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
 
             dfs_tools.rename(columns={ col: col_split }, inplace=True)
 
+    for col in dfs_tools.columns:
+        if re.search(r"z3strRE", col):
+            col_split = re.sub(r"z3strRE", "z3str3RE", col)
+
+            dfs_tools.rename(columns={ col: col_split }, inplace=True)
+
     dfs_tools.to_csv(f"csvs/cactus_plot_{csv_file_name}.csv", index=False)
 
     return dfs_tools
@@ -831,7 +847,7 @@ def generate_requested_cactus_plots():
         tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
         benchmarks=Benchmark.items(),
         csv_file_name="all_no_ostrich_trau_improvement_noodler")
-    generate_cactus_plot(df_cactus, "mult_virtual_all_no_ostrich_trau_improvement_noodler_start_26k_not_logarithmic", 26_000, 26_658, logarithmic_y_axis=False)
+    generate_cactus_plot(df_cactus, "mult_virtual_all_no_ostrich_trau_improvement_noodler_start_26k_not_logarithmic", 25_900, 26_658, logarithmic_y_axis=False)
     df_cactus = generate_cactus_plot_csvs(
         dfs,
         tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4],
@@ -839,7 +855,7 @@ def generate_requested_cactus_plots():
         tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
         benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
         csv_file_name="no_kaluza_no_ostrich_trau_improvement_noodler")
-    generate_cactus_plot(df_cactus, "mult_virtual_no_kaluza_no_ostrich_trau_improvement_noodler_start_6_8k_not_logarithmic", 6_800, 7_126, logarithmic_y_axis=False)
+    generate_cactus_plot(df_cactus, "mult_virtual_no_kaluza_no_ostrich_trau_improvement_noodler_start_6_8k_not_logarithmic", 6_600, 7_126, logarithmic_y_axis=False)
 
 
 
