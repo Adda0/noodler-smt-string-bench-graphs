@@ -21,13 +21,10 @@ import plotnine as p9
 import math
 import mizani.formatters as mizani
 import warnings
-warnings.filterwarnings('ignore')
 
-from plotnine.themes.themeable import legend_key_width
-# in seconds
-TIMEOUT = 120
-TIMEOUT_VAL = TIMEOUT * 1.1
-TIME_MIN = 0.01
+from  z3_noodler_config import *
+
+warnings.filterwarnings('ignore')
 
 # For reading in files
 def read_file(filename):
@@ -488,46 +485,10 @@ def create_dfs(files, noodler_version, noodler_underapprox_version):
 
     return dfs, df_all, df_normal, df_underapprox
 
-class ExtendedEnum(enum.Enum):
-    @classmethod
-    def values(cls):
-        return list(map(lambda c: c.value, cls))
 
-    @classmethod
-    def names(cls):
-        return list(map(lambda c: c.name, cls))
-
-    @classmethod
-    def items(cls):
-        return list(map(lambda c: c, cls))
-
-
-class Benchmark(ExtendedEnum):
-    slog = "slog"
-    slent = "slent"
-    norn = "norn"
-    leetcode = "leetcode"
-    sygus_qgen = "sygus_qgen"
-    kaluza = "kaluza"
-
-BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
-BENCHMARKS_DATA_FILE_NAME = "to120.csv"
-
-FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in Benchmark.values()]
-
-class Tool(ExtendedEnum):
-    noodler = "z3-noodler-9f5e602"
-    noodler_underapprox = "z3-noodler-9f5e602-underapprox"
-    noodler_common = "z3-noodler-common"
-    cvc5 = "cvc5"
-    z3 = "z3"
-    z3_str_re = "z3strRE"
-    z3_trau = "z3-trau"
-    z3_str_4 = "z3str4"
-    ostrich = "ostrich"
-
-
-def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool], benchmarks: list[Benchmark], file_name: str):
+def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool],
+                              benchmarks: list[Benchmark], csv_file_name: str,
+                              tools_for_virtual_best_solver_improvement: list[Tool] | None = None):
     new_dfs = {}
     benchmark_names = [benchmark.value for benchmark in benchmarks]
     for benchmark, df in dfs.items():
@@ -536,14 +497,23 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
         new_dfs[benchmark] = df
     dfs_all = pd.concat(new_dfs)
 
+    tools_to_print_columns = [f"{tool.value}-runtime" for tool in tools_to_print]
+
     # Add virtual best solver.
     tool_runtime_names = [f"{tool.value}-runtime" for tool in tools_for_virtual_best_solver]
     df_runtimes = dfs_all.loc[:, tool_runtime_names]
     #print(df_runtimes)
     dfs_all["virtual-best-runtime"] = np.nanmin(df_runtimes, axis=1)
+    tools_to_print_columns.insert(0, "virtual-best-runtime")
 
-    tools_to_print_columns = [f"{tool.value}-runtime" for tool in tools_to_print]
-    tools_to_print_columns.append("virtual-best-runtime")
+    if tools_for_virtual_best_solver_improvement:
+        tool_runtime_names = [f"{tool.value}-runtime" for tool
+                              in tools_for_virtual_best_solver_improvement + tools_for_virtual_best_solver]
+        df_runtimes = dfs_all.loc[:, tool_runtime_names]
+        #print(df_runtimes)
+        dfs_all["virtual-best-changed-runtime"] = np.nanmin(df_runtimes, axis=1)
+        tools_to_print_columns.insert(0, "virtual-best-changed-runtime")
+
     dfs_tools = dfs_all[tools_to_print_columns].reset_index(drop=True)
     #print(dfs_tools)
     for col in dfs_tools:
@@ -552,92 +522,224 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
         #print(dfs_tools[col].sort_values(ignore_index=True))
         dfs_tools[col] = dfs_tools[col].sort_values(ignore_index=True)
     #print()
-    dfs_tools.to_csv(f"csvs/cactus_plot_{file_name}.csv", index=False)
+    dfs_tools.to_csv(f"csvs/cactus_plot_{csv_file_name}.csv", index=False)
 
     return dfs_tools
 
 
-dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
+def generate_requested_cactus_plots():
+    # Generate quick benchmarks cactus plots.
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3_show_noodler_cvc5_z3")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_start_0_show_noodler_cvc5_z3", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3_noodler_show_noodler_cvc5_z3")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_noodler_start_0_show_noodler_cvc5_z3", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3_improvement_noodler_show_noodler_cvc5_z3")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_improvement_noodler_start_0_show_noodler_cvc5_z3", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_start_0", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3_noodler")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_noodler_start_0", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_cvc5_z3_improvement_noodler")
+    generate_cactus_plot(df_cactus, "quick_cvc5_z3_improvement_noodler_start_0", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_all")
+    generate_cactus_plot(df_cactus, "quick_all_start_0", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4,
+                                       Tool.ostrich],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_all_noodler")
+    generate_cactus_plot(df_cactus, "quick_all_noodler_start_0", 0, 5000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
+        csv_file_name="quick_all_improvement_noodler")
+    generate_cactus_plot(df_cactus, "quick_all_improvement_noodler_start_0", 0, 5000)
+    # Generate all benchmarks cactus plots.
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_z3_cvc5_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_start_0_show_z3_cvc5_noodler", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_start_15k_show_z3_cvc5_noodler", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_start_21k_show_z3_cvc5_noodler", 21_000, 27_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_z3_cvc5_noodler_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_noodler_start_0_show_z3_cvc5_noodler", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_noodler_start_15k_show_z3_cvc5_noodler", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_noodler_start_21k_show_z3_cvc5_noodler", 21_000, 27_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_z3_cvc5_improvement_noodler_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_0_show_z3_cvc5_noodler", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_15k_show_z3_cvc5_noodler", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_21k_show_z3_cvc5_noodler", 21_000, 27_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_all")
+    generate_cactus_plot(df_cactus, "all_all_start_0", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_start_15k", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_start_21k", 21_000, 27_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4,
+                                       Tool.ostrich],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_all_noodler")
+    generate_cactus_plot(df_cactus, "all_all_noodler_start_0", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_noodler_start_15k", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_noodler_start_21k", 21_000, 27_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=Benchmark.items(),
+        csv_file_name="all_all_improvement_noodler")
+    generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_0", 0, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_15k", 15_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_21k", 21_000, 27_000)
+    # Generate all benchmarks without Kaluza benchmark cactus plots.
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_z3_cvc5_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_start_0_show_z3_cvc5_noodler", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_start_4k_show_z3_cvc5_noodler", 4_000, 8_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_z3_cvc5_noodler_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_noodler_start_0_show_z3_cvc5_noodler", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_noodler_start_4k_show_z3_cvc5_noodler", 4_000, 8_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_z3_cvc5_improvement_noodler_show_z3_cvc5_noodler")
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_improvement_noodler_start_0_show_z3_cvc5_noodler", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_z3_cvc5_improvement_noodler_start_4k_show_z3_cvc5_noodler", 4_000, 8_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_all")
+    generate_cactus_plot(df_cactus, "no_kaluza_all_start_0", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_all_start_4k", 4_000, 8_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4,
+                                       Tool.ostrich],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_all_noodler")
+    generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_0", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_4k", 4_000, 8_000)
+    df_cactus = generate_cactus_plot_csvs(
+        dfs,
+        tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
+        tools_for_virtual_best_solver_improvement=[Tool.noodler_common],
+        benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
+        csv_file_name="no_kaluza_all_improvement_noodler")
+    generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_0", 0, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_4k", 4_000, 8_000)
 
-# Generate CSVs for cactus plot.
-df_cactus = generate_cactus_plot_csvs(dfs,
-                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3],
-                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
-                          file_name="cvc5_z3")
-generate_cactus_plot(df_cactus, "quick_cvc5_z3_start_0", 0, 5000)
-df_cactus = generate_cactus_plot_csvs(dfs,
-                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3],
-                          benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
-                          file_name="cvc5_z3_noodler")
-generate_cactus_plot(df_cactus, "quick_cvc5_z3_noodler_start_0", 0, 5000)
 
+if __name__ == "__main__":
+    dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
 
-df_cactus = generate_cactus_plot_csvs(dfs,
-                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          benchmarks=Benchmark.items(),
-                          file_name="all_without_noodler")
-generate_cactus_plot(df_cactus, "all_all_start_0", 0, 27_000)
-generate_cactus_plot(df_cactus, "all_all_start_15k", 15_000, 27_000)
-generate_cactus_plot(df_cactus, "all_all_start_21k", 21_000, 27_000)
-df_cactus = generate_cactus_plot_csvs(dfs,
-                          tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                          benchmarks=Benchmark.items(),
-                          file_name="all_with_noodler")
-generate_cactus_plot(df_cactus, "all_all_noodler_start_0", 0, 27_000)
-generate_cactus_plot(df_cactus, "all_all_noodler_start_15k", 15_000, 27_000)
-generate_cactus_plot(df_cactus, "all_all_noodler_start_21k", 21_000, 27_000)
+    # Generate CSVs for cactus plot.
+    generate_requested_cactus_plots()
 
+    with open("statistics", "w+") as out_file:
+        out_stream = contextlib.redirect_stdout(out_file)
 
+        with out_stream:
+            other_tools = [Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_trau, Tool.z3_str_4, Tool.ostrich]
+            all_tools = [Tool.noodler] + other_tools
+            all_tools_common = [Tool.noodler_common] + other_tools
+            all_tools_underapprox = [Tool.noodler_underapprox] + other_tools
+            gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], Tool.noodler, all_tools, benchmark_name="quick")
+            gen_evaluation(df_normal, Tool.noodler, all_tools, benchmark_name="normal_all")
+            gen_evaluation(df_underapprox, Tool.noodler_underapprox, all_tools_underapprox, benchmark_name="underapprox")
+            for benchmark in Benchmark.values():
+                if benchmark in ["kaluza"]:
+                    gen_evaluation(dfs[benchmark], Tool.noodler_underapprox, all_tools_underapprox, benchmark_name=benchmark + "_underapprox")
+                elif benchmark in ["leetcode"]:
+                    gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
+                else:
+                    gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
 
-df_cactus = generate_cactus_plot_csvs(dfs,
-                                      tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                                      tools_for_virtual_best_solver=[Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                                      benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
-                                      file_name="no_kaluza_without_noodler")
-generate_cactus_plot(df_cactus, "no_kaluza_all_start_0", 0, 8_000)
-generate_cactus_plot(df_cactus, "no_kaluza_all_start_4k", 4_000, 8_000)
-#generate_cactus_plot(df_cactus, "no_kaluza_all_start_15k", 15_000, 8_000)
-#generate_cactus_plot(df_cactus, "no_kaluza_all_start_21k", 21_000, _000)
-df_cactus = generate_cactus_plot_csvs(dfs,
-                                      tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                                      tools_for_virtual_best_solver=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
-                                      benchmarks=[Benchmark.slog, Benchmark.slent, Benchmark.norn, Benchmark.leetcode, Benchmark.sygus_qgen],
-                                      file_name="no_kaluza_with_noodler")
-generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_0", 0, 8_000)
-generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_4k", 4_000, 8_000)
-#generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_15k", 15_000, 27_000)
-#generate_cactus_plot(df_cactus, "no_kaluza_all_noodler_start_21k", 21_000, 27_000)
+            gen_evaluation(df_all, Tool.noodler_common, all_tools_common, benchmark_name="all")
 
-with open("statistics", "w+") as out_file:
-    out_stream = contextlib.redirect_stdout(out_file)
+            # Evaluate experiments for OSTRICH.
+            gen_evaluation(df_all, Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
 
-    with out_stream:
-        other_tools = [Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_trau, Tool.z3_str_4, Tool.ostrich]
-        all_tools = [Tool.noodler] + other_tools
-        all_tools_common = [Tool.noodler_common] + other_tools
-        all_tools_underapprox = [Tool.noodler_underapprox] + other_tools
-        gen_evaluation(df_normal.loc[~df_normal["benchmark"].isin(["leetcode"])], Tool.noodler, all_tools, benchmark_name="quick")
-        gen_evaluation(df_normal, Tool.noodler, all_tools, benchmark_name="normal_all")
-        gen_evaluation(df_underapprox, Tool.noodler_underapprox, all_tools_underapprox, benchmark_name="underapprox")
-        for benchmark in Benchmark.values():
-            if benchmark in ["kaluza"]:
-                gen_evaluation(dfs[benchmark], Tool.noodler_underapprox, all_tools_underapprox, benchmark_name=benchmark + "_underapprox")
-            elif benchmark in ["leetcode"]:
-                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
-            else:
-                gen_evaluation(dfs[benchmark], Tool.noodler, all_tools, benchmark_name=benchmark)
-
-        gen_evaluation(df_all, Tool.noodler_common, all_tools_common, benchmark_name="all")
-
-        # Evaluate experiments for OSTRICH.
-        gen_evaluation(df_all, Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
-
-        # Evaluate experiments for Z3-trau.
-        gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")
+            # Evaluate experiments for Z3-trau.
+            gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")
 
 
 
