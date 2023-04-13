@@ -151,21 +151,21 @@ def sanity_check(df):
 
 def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000, logarithmic_y_axis: bool = True):
     concat = pd.DataFrame()
-    m = 0
 
     for t in df.columns:
+        #print(df[t])
         tseries1 = pd.Series(df[t].tolist())
         tseries1 = tseries1[start:]
         concat.insert(0, t.rsplit('-', 1)[0], tseries1)
 
-    inc = int((end-start)/5)
-    plt = concat.plot.line(xticks=range(start,end,inc), figsize=(6,6), grid=True, fontsize=10, lw=2)
+    plt = concat.plot.line(xticks=np.linspace(start, end, 5, dtype=int), grid=True, fontsize=10, lw=2, figsize=(10, 3))
     if logarithmic_y_axis:
         plt.set_yscale('log')
-    plt.set_xlabel("instances", fontsize=16)
-    plt.set_ylabel("runtime [s]", fontsize=16)
-    plt.legend(loc=6,prop={"size": 8})
-    plt.figure.savefig(f"graphs/fig-cactus-{file_name}.pdf", dpi=1000)
+    plt.set_xlabel("Instances", fontsize=16)
+    plt.set_ylabel("Runtime [s]", fontsize=16)
+    plt.legend(loc='upper right',prop={"size": 12})
+    #plt.legend(bbox_to_anchor=(0.75, 1), loc='upper left')
+    plt.figure.savefig(f"graphs/fig-cactus-{file_name}.pdf", dpi=1000, bbox_inches='tight')
 
 
 def gen_vbs_plot(df, tools1, tools2, legend1, legend2):
@@ -287,6 +287,8 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
             row_dict['sum_with_timeouts'],
             row_dict['sum'],
         ])
+    #pd.DataFrame(tab_basic_time).to_csv("csvs/test.csv")
+
 
     headers_basic_time = ["Method", "T/Os", "Errors", "Unknowns", "Time", "Time-T/Os"]
     print("Table basic time: " + benchmark_name)
@@ -498,29 +500,71 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
         new_dfs[benchmark] = df
     dfs_all = pd.concat(new_dfs)
 
-    tools_to_print_columns = [f"{tool.value}-runtime" for tool in tools_to_print]
+    # Rename Noodler to Tool.
+    for col in dfs_all.columns:
+        if re.search(r"z3-noodler-common", col):
+            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            dfs_all.rename(columns={ col: col_split }, inplace=True)
+
+    for col in dfs_all.columns:
+        if re.search(r"z3-noodler", col):
+            col_split = re.sub(r"z3-noodler", "Tool", col)
+            dfs_all.rename(columns={ col: col_split }, inplace=True)
+
+    tools_names = [tool.value for tool in tools_to_print]
+    for i, col in enumerate(tools_names):
+        if re.search(r"z3-noodler-common", col):
+            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            tools_names[i] = col_split
+    tools_virtual_names = [tool.value for tool in tools_for_virtual_best_solver]
+    for i, col in enumerate(tools_virtual_names):
+        if re.search(r"z3-noodler-common", col):
+            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            tools_virtual_names[i] = col_split
+
+    tools_to_print_columns = [f"{tool}-runtime" for tool in tools_names]
 
     # Add virtual best solver.
-    tool_runtime_names = [f"{tool.value}-runtime" for tool in tools_for_virtual_best_solver]
+    tool_runtime_names = [f"{tool}-runtime" for tool in tools_virtual_names]
     df_runtimes = dfs_all.loc[:, tool_runtime_names]
     #print(df_runtimes)
-    dfs_all["virtual-best-runtime"] = np.nanmin(df_runtimes, axis=1)
-    tools_to_print_columns.insert(0, "virtual-best-runtime")
+
+    virtual_best_name = '+'.join([tool for tool in tools_virtual_names])
+    #print(virtual_best_name)
+
+    dfs_all[f"virtual-{virtual_best_name}-runtime"] = np.nanmin(df_runtimes, axis=1)
+    tools_to_print_columns.insert(0, f"virtual-{virtual_best_name}-runtime")
+
 
     if tools_for_virtual_best_solver_improvement:
-        tool_runtime_names = [f"{tool.value}-runtime" for tool
-                              in tools_for_virtual_best_solver_improvement + tools_for_virtual_best_solver]
+        improvement_tools = [tool.value for tool in tools_for_virtual_best_solver_improvement]
+        for i, col in enumerate(improvement_tools):
+            if re.search(r"z3-noodler-common", col):
+                col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                improvement_tools[i] = col_split
+        tools = [tool for tool in improvement_tools + tools_virtual_names]
+        for i, col in enumerate(tools):
+             if re.search(r"z3-noodler-common", col):
+                col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                tools[i] = col_split
+             #print(tools[i])
+        tool_runtime_names = [f"{tool}-runtime" for tool in tools]
         df_runtimes = dfs_all.loc[:, tool_runtime_names]
         #print(df_runtimes)
-        dfs_all["virtual-best-changed-runtime"] = np.nanmin(df_runtimes, axis=1)
-        tools_to_print_columns.insert(0, "virtual-best-changed-runtime")
+
+
+        virtual_best_improvement_name = '+'.join(improvement_tools + tools_virtual_names)
+        dfs_all[f"virtual-{virtual_best_improvement_name}-runtime"] = np.nanmin(df_runtimes, axis=1)
+        tools_to_print_columns.insert(0, f"virtual-{virtual_best_improvement_name}-runtime")
 
     dfs_tools = dfs_all[tools_to_print_columns].reset_index(drop=True)
 
     # Rename Noodler to Tool.
     for col in dfs_tools.columns:
-        if re.search(r"z3-noodler", col):
-            dfs_tools.rename(columns={ col: "Tool" }, inplace=True)
+        if re.search(r"z3-noodler-common", col):
+            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+
+            dfs_tools.rename(columns={ col: col_split }, inplace=True)
 
     #print(dfs_tools)
     for col in dfs_tools:
@@ -529,6 +573,14 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
         #print(dfs_tools[col].sort_values(ignore_index=True))
         dfs_tools[col] = dfs_tools[col].sort_values(ignore_index=True)
     #print()
+
+    # Rename Noodler to Tool.
+    for col in dfs_tools.columns:
+        if re.search(r"virtual-", col):
+            col_split = re.sub(r"virtual-", "", col)
+
+            dfs_tools.rename(columns={ col: col_split }, inplace=True)
+
     dfs_tools.to_csv(f"csvs/cactus_plot_{csv_file_name}.csv", index=False)
 
     return dfs_tools
@@ -635,6 +687,7 @@ def generate_requested_cactus_plots():
     generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_0_show_z3_cvc5_noodler", 0, 27_000)
     generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_15k_show_z3_cvc5_noodler", 15_000, 27_000)
     generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_21k_show_z3_cvc5_noodler", 21_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_z3_cvc5_improvement_noodler_start_26k_show_z3_cvc5_noodler_not_logarithmic", 26_000, 26_658, logarithmic_y_axis=False)
     df_cactus = generate_cactus_plot_csvs(
         dfs,
         tools_to_print=[Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_re, Tool.z3_str_4, Tool.ostrich],
@@ -664,6 +717,7 @@ def generate_requested_cactus_plots():
     generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_0", 0, 27_000)
     generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_15k", 15_000, 27_000)
     generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_21k", 21_000, 27_000)
+    generate_cactus_plot(df_cactus, "all_all_improvement_noodler_start_26k_not_logarithmic", 26_000, 26_658, logarithmic_y_axis=False)
     # Generate all benchmarks without Kaluza benchmark cactus plots.
     df_cactus = generate_cactus_plot_csvs(
         dfs,
