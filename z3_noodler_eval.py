@@ -46,7 +46,8 @@ def read_file(filename):
         if re.search(r"-runtime$", col):
             [tool_name, _] = col.rsplit('-', 1)
             tool_result_name = f"{tool_name}-result"
-            df_loc.loc[df_loc[tool_result_name].isin(['ERR', 'TO', 'unknown']), col] = np.nan
+            #df_loc.loc[df_loc[tool_result_name].isin(['ERR', 'TO', 'unknown']), col] = np.nan
+            df_loc.loc[df_loc[tool_result_name].isin(['ERR', 'TO']), col] = np.nan
             df_loc[col] = df_loc[col].astype(float)
 
     return df_loc
@@ -230,24 +231,23 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
             col_tool_name = col.rsplit('-', 1)[0]
             col_result_name = f"{col_tool_name}-result"
             timeouts_err_unknown_num = df[col].isna().sum()
+            timeouts_num: int = summary_times[col_result_name]["timeouts"]
             time_sum = df[col].sum()
             summary_times[col] = dict()
             summary_times[col]['sum'] = time_sum
-            summary_times[col]['sum_with_timeouts'] = time_sum + timeout_time * timeouts_err_unknown_num
+            summary_times[col]['sum_with_timeouts'] = time_sum + timeout_time * timeouts_num
             summary_times[col]['max'] = df[col].max()
             summary_times[col]['min'] = df[col].min()
             summary_times[col]['mean'] = df[col].mean()
             summary_times[col]['median'] = df[col].median()
             summary_times[col]['std'] = df[col].std()
-            summary_times[col]['timeouts'] = summary_times[col_result_name]["timeouts"]
+            summary_times[col]['timeouts'] = timeouts_num
             summary_times[col]['errors'] = summary_times[col_result_name]["errors"]
             summary_times[col]['unknowns'] = summary_times[col_result_name]["unknowns"]
 
     #print(summary_times)
 
     df_summary_times = pd.DataFrame(summary_times).transpose()
-
-
 
     tab_interesting = []
     for i in all_tools:
@@ -713,9 +713,10 @@ def generate_requested_cactus_plots():
     generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_0", 0, 8_000)
     generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_4k", 4_000, 8_000)
 
+dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
+
 
 if __name__ == "__main__":
-    dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
 
     # Generate CSVs for cactus plot.
     generate_requested_cactus_plots()
