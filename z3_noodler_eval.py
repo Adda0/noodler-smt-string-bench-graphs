@@ -149,7 +149,7 @@ def sanity_check(df):
     return pt
 
 
-def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000):
+def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000, logarithmic_y_axis: bool = True):
     concat = pd.DataFrame()
     m = 0
 
@@ -160,7 +160,8 @@ def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000):
 
     inc = int((end-start)/5)
     plt = concat.plot.line(xticks=range(start,end,inc), figsize=(6,6), grid=True, fontsize=10, lw=2)
-    plt.set_yscale('log')
+    if logarithmic_y_axis:
+        plt.set_yscale('log')
     plt.set_xlabel("instances", fontsize=16)
     plt.set_ylabel("runtime [s]", fontsize=16)
     plt.legend(loc=6,prop={"size": 8})
@@ -602,6 +603,9 @@ def generate_requested_cactus_plots():
         benchmarks=[Benchmark.slog, Benchmark.norn, Benchmark.slent, Benchmark.sygus_qgen],
         csv_file_name="quick_all_improvement_noodler")
     generate_cactus_plot(df_cactus, "quick_all_improvement_noodler_start_0", 0, 5000)
+    generate_cactus_plot(df_cactus, "quick_all_improvement_noodler_start_4_15k_not_logarithmic",
+                         start=4_150, end=4_500, logarithmic_y_axis=False)
+
     # Generate all benchmarks cactus plots.
     df_cactus = generate_cactus_plot_csvs(
         dfs,
@@ -712,6 +716,8 @@ def generate_requested_cactus_plots():
         csv_file_name="no_kaluza_all_improvement_noodler")
     generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_0", 0, 8_000)
     generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_4k", 4_000, 8_000)
+    generate_cactus_plot(df_cactus, "no_kaluza_all_improvement_noodler_start_6_4k_not_logarithmic", 6_400, 8_000, logarithmic_y_axis=False)
+
 
 dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
 
