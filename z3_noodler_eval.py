@@ -515,6 +515,12 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
         tools_to_print_columns.insert(0, "virtual-best-changed-runtime")
 
     dfs_tools = dfs_all[tools_to_print_columns].reset_index(drop=True)
+
+    # Rename Noodler to Tool.
+    for col in dfs_tools.columns:
+        if re.search(r"z3-noodler", col):
+            dfs_tools.rename(columns={ col: "Tool" }, inplace=True)
+
     #print(dfs_tools)
     for col in dfs_tools:
         #print(col)
