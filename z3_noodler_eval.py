@@ -165,7 +165,11 @@ def generate_cactus_plot(df, file_name: str, start: int = 0, end: int = 27000, l
         tseries1 = tseries1[start:]
         concat.insert(0, t.rsplit('-', 1)[0], tseries1)
 
-    plt = concat.plot.line(xticks=np.linspace(start, end, 5, dtype=int), grid=True, fontsize=10, lw=2, figsize=(10, 3))
+    plt = concat.plot.line(grid=True, fontsize=10, lw=2, figsize=(10, 3))
+    ticks = np.linspace(start, end, 5, dtype=int)
+    labels_ticks = [end - tick for tick in ticks]
+    # plt.set_xticks(ticks, labels_ticks)
+    plt.set_xticks(ticks)
     if logarithmic_y_axis:
         plt.set_yscale('log')
     plt.set_xlabel("Instances", fontsize=16)
@@ -577,21 +581,21 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
                     col_split = re.sub(r"z3-noodler-common", "Tool", col)
                     special_virt_solver_names[i] = col_split
             virtual_best_improvement_name = '+'.join([f"{tool.value}" for tool in [Tool.noodler_common, Tool.cvc5]])
-            print(dfs_all.columns)
+            # print(dfs_all.columns)
             df_runtimes = dfs_all.loc[:, special_virt_solver_names]
             dfs_all[f"virtual-{virtual_best_improvement_name}-runtime"] = np.nanmin(df_runtimes, axis=1)
             tools_to_print_columns.insert(0, f"virtual-{virtual_best_improvement_name}-runtime")
 
-            special_virt_solver_names = [f"{tool.value}-runtime" for tool in [Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_4]]
-            for i, col in enumerate(special_virt_solver_names):
-                if re.search(r"z3-noodler-common", col):
-                    col_split = re.sub(r"z3-noodler-common", "Tool", col)
-                    special_virt_solver_names[i] = col_split
-            virtual_best_improvement_name = '+'.join([f"{tool.value}" for tool in [Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_4]])
-            print(dfs_all.columns)
-            df_runtimes = dfs_all.loc[:, special_virt_solver_names]
-            dfs_all[f"virtual-{virtual_best_improvement_name}-runtime"] = np.nanmin(df_runtimes, axis=1)
-            tools_to_print_columns.insert(0, f"virtual-{virtual_best_improvement_name}-runtime")
+            # special_virt_solver_names = [f"{tool.value}-runtime" for tool in [Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_4]]
+            # for i, col in enumerate(special_virt_solver_names):
+            #     if re.search(r"z3-noodler-common", col):
+            #         col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            #         special_virt_solver_names[i] = col_split
+            # virtual_best_improvement_name = '+'.join([f"{tool.value}" for tool in [Tool.noodler_common, Tool.cvc5, Tool.z3, Tool.z3_str_4]])
+            # print(dfs_all.columns)
+            # df_runtimes = dfs_all.loc[:, special_virt_solver_names]
+            # dfs_all[f"virtual-{virtual_best_improvement_name}-runtime"] = np.nanmin(df_runtimes, axis=1)
+            # tools_to_print_columns.insert(0, f"virtual-{virtual_best_improvement_name}-runtime")
 
 
     dfs_tools = dfs_all[tools_to_print_columns].reset_index(drop=True)
