@@ -438,7 +438,7 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
         figlegend = pylab.figure(figsize=(10,10))
         labels = df["benchmark"].unique().tolist()
         labels.sort()
-        print(labels)
+        #print(labels)
 
         figlegend.legend(fig.get_children(),
                          labels,
