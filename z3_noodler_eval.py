@@ -17,6 +17,7 @@ import sys
 import numpy as np
 import pandas as pd
 import re as re
+import seaborn as sns
 
 import pylab
 import tabulate as tab
@@ -430,6 +431,24 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     )
     for params in to_cmp2]
 
+    for params in to_cmp2:
+        # fig = sns.scatterplot(data=df, x=params['x'] + '-runtime', y=params['y'] + '-runtime', hue="benchmark", style=)
+        fig = mplt.pyplot.scatter(x=df[params['x'] + '-runtime'], y=df[params['y'] + '-runtime'])
+
+        figlegend = pylab.figure(figsize=(10,10))
+        labels = df["benchmark"].unique().tolist()
+        labels.sort()
+        print(labels)
+
+        figlegend.legend(fig.get_children(),
+                         labels,
+                         # scatterpoints=1,
+                         loc='center',
+                         ncol=3,
+                         fontsize=8)
+        figlegend.legend(fig.get_children(), labels, loc='center', frameon=False)
+        figlegend.savefig(f"{params['filename'].split('.')[0] + '_legend_separate.pdf'}", dpi=1000)
+
     #print("\n\n")
     #print("Generating plots...")
     for x, y, filename, plot in plot_list:
@@ -438,7 +457,10 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
             #print(f"plotting x: {x}, y: {y}... saving to {filename}")
             # plot.save(filename, scale_factor=2)
             plot.save(filename=filename, dpi=1000)
+
             #print(plot)
+
+
 
     # return benchmarks solvable only by 'engine'
     def only_solves(df, engine):
@@ -889,7 +911,7 @@ if __name__ == "__main__":
             gen_evaluation(df_all, Tool.noodler_common, all_tools_common, benchmark_name="all")
 
             # Evaluate experiments for OSTRICH.
-            gen_evaluation(df_all, Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
+            gen_evaluation(df_all.loc[~df_all["benchmark"].isin([Benchmark.slog.value])], Tool.noodler_common, [Tool.noodler_common, Tool.ostrich], benchmark_name="all_ostrich")
 
             # Evaluate experiments for Z3-trau.
             gen_evaluation(df_all.loc[~df_all["benchmark"].isin(["norn", "slent"])], Tool.noodler_common, all_tools_common, benchmark_name="all_trau")

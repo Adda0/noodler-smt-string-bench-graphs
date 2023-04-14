@@ -32,6 +32,7 @@ class Benchmark(ExtendedEnum):
     leetcode = "leetcode"
     sygus_qgen = "sygus_qgen"
     kaluza = "kaluza"
+    regex = "regex"
 
 
 BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
