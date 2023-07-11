@@ -29,16 +29,14 @@ class Benchmark(ExtendedEnum):
     slog = "slog"
     slent = "slent"
     norn = "norn"
-    leetcode = "leetcode"
     sygus_qgen = "sygus_qgen"
+    leetcode = "leetcode"
     kaluza = "kaluza"
-    regex = "regex"
+    # regex = "regex"
 
 
 BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
 BENCHMARKS_DATA_FILE_NAME = "to120.csv"
-
-
 FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in Benchmark.values()]
 
 

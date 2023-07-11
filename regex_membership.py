@@ -106,7 +106,10 @@ def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, widt
     scatter += p9.theme_bw()
     scatter += p9.theme(panel_grid_major=p9.element_line(color='#666666', alpha=0.5))
     scatter += p9.theme(panel_grid_minor=p9.element_blank())
-    scatter += p9.theme(figure_size=(width, height))
+    if show_legend:
+        scatter += p9.theme(figure_size=(width + 2.3, height))
+    else:
+        scatter += p9.theme(figure_size=(width, height))
     scatter += p9.theme(axis_text=p9.element_text(size=24, color="black"))
     scatter += p9.theme(axis_title=p9.element_text(size=24, color="black"))
     legend_text_size = 20
