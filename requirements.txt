@@ -1,0 +1,4 @@
+seaborn
+plotnine
+mizani
+tabulate
