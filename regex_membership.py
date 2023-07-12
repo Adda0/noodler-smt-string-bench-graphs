@@ -673,7 +673,7 @@ def generate_requested_cactus_plots():
     pass
 
 
-dfs, df_all, df_normal, df_underapprox = create_dfs(FILES, Tool.noodler, Tool.noodler_underapprox)
+dfs, df_all, df_normal, df_underapprox = create_dfs(FILES + [BENCHMARKS_FOLDER_PATH / "regex" / BENCHMARKS_DATA_FILE_NAME], Tool.noodler, Tool.noodler_underapprox)
 
 
 if __name__ == "__main__":
@@ -681,7 +681,7 @@ if __name__ == "__main__":
     # Generate CSVs for cactus plot.
     generate_requested_cactus_plots()
 
-    with open("statistics", "w+") as out_file:
+    with open("statistics_regex", "w+") as out_file:
         out_stream = contextlib.redirect_stdout(out_file)
 
         with out_stream:

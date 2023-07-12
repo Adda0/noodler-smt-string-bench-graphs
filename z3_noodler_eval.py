@@ -439,22 +439,23 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
     )
     for params in to_cmp2]
 
-    for params in to_cmp2:
-        # fig = sns.scatterplot(data=df, x=params['x'] + '-runtime', y=params['y'] + '-runtime', hue="benchmark", style=)
-        fig = mplt.pyplot.scatter(x=df[params['x'] + '-runtime'], y=df[params['y'] + '-runtime'])
+    # Generate separate legends. Currently broken.
+    #for params in to_cmp2:
+    #    # fig = sns.scatterplot(data=df, x=params['x'] + '-runtime', y=params['y'] + '-runtime', hue="benchmark", style=)
+    #    fig = mplt.pyplot.scatter(x=df[params['x'] + '-runtime'], y=df[params['y'] + '-runtime'])
 
-        figlegend = pylab.figure(figsize=(10,10))
-        labels = df["benchmark"].unique().tolist()
-        labels.sort()
+    #    figlegend = pylab.figure(figsize=(10,10))
+    #    labels = df["benchmark"].unique().tolist()
+    #    labels.sort()
 
-        figlegend.legend(fig.get_children(),
-                         labels,
-                         # scatterpoints=1,
-                         loc='center',
-                         ncol=3,
-                         fontsize=8)
-        figlegend.legend(fig.get_children(), labels, loc='center', frameon=False)
-        figlegend.savefig(f"{params['filename'].split('.')[0] + '_legend_separate.pdf'}", dpi=1000)
+    #    figlegend.legend(fig.get_children(),
+    #                     labels,
+    #                     # scatterpoints=1,
+    #                     loc='center',
+    #                     ncol=3,
+    #                     fontsize=8)
+    #    figlegend.legend(fig.get_children(), labels, loc='center', frameon=False)
+    #    figlegend.savefig(f"{params['filename'].split('.')[0] + '_legend_separate.pdf'}", dpi=1000)
 
     #print("\n\n")
     #print("Generating plots...")
