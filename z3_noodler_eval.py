@@ -65,7 +65,7 @@ def read_file(filename):
 def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, width=6, height=6, clamp=True, tickCount=5, show_legend=False):
     assert len(domain) == 2
 
-    POINT_SIZE = 1.0
+    POINT_SIZE = 5
     DASH_PATTERN = (0, (6, 2))
 
     if xname is None:
@@ -89,13 +89,16 @@ def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, widt
         df.loc[df[xcol] > domain[1], xcol] = domain[1]
         df.loc[df[ycol] > domain[1], ycol] = domain[1]
 
+    df_ordered = df.assign(benchmark=pd.Categorical(df['benchmark'], Benchmark.values()))
+
     # generate scatter plot
-    scatter = p9.ggplot(df)
-    scatter += p9.aes(x=xcol, y=ycol, color="benchmark")
-    scatter += p9.geom_point(size=POINT_SIZE, na_rm=True, show_legend=show_legend)
-    scatter += p9.labs(x=xname, y=yname)
-    scatter += p9.theme(legend_key_width=2)
-    scatter += p9.scale_color_hue(l=0.4, s=0.9, h=0.1)
+    scatter = p9.ggplot(df_ordered) \
+        + p9.aes(x=xcol, y=ycol, color="benchmark") \
+        + p9.geom_point(size=POINT_SIZE, na_rm=True, show_legend=show_legend) \
+        + p9.labs(x=xname, y=yname) \
+        + p9.theme(legend_key_width=2) \
+        + p9.scale_color_brewer(type="qual", palette="Dark2", name="Benchmark", drop=True, direction=-1)
+    # + p9.geom_jitter(width=0.2, height=0.2, size=POINT_SIZE) \
 
     # rug plots
     scatter += p9.geom_rug(na_rm=True, sides="tr", alpha=0.05)
