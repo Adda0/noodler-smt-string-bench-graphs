@@ -31,6 +31,10 @@ from  z3_noodler_config import *
 
 warnings.filterwarnings('ignore')
 
+BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
+BENCHMARKS_DATA_FILE_NAME = "to120_nonmembership.csv"
+FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in Benchmark.values()]
+
 
 def get_powerset(iterable):
     s = list(iterable)

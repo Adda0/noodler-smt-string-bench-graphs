@@ -5,8 +5,7 @@
 import pathlib
 import enum
 
-# in seconds
-TIMEOUT = 120
+TIMEOUT = 120  # In seconds.
 TIMEOUT_VAL = TIMEOUT * 1.1
 TIME_MIN = 0.01
 
@@ -33,11 +32,6 @@ class Benchmark(ExtendedEnum):
     leetcode = "leetcode"
     kaluza = "kaluza"
     # regex = "regex"
-
-
-BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
-BENCHMARKS_DATA_FILE_NAME = "to120.csv"
-FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in Benchmark.values()]
 
 
 class Tool(ExtendedEnum):

@@ -28,6 +28,9 @@ from z3_noodler_config import *
 
 warnings.filterwarnings('ignore')
 
+BENCHMARKS_FOLDER_PATH = pathlib.Path("../smt-string-bench-results/")
+BENCHMARKS_DATA_FILE_NAME = "to120.csv"
+FILES = [BENCHMARKS_FOLDER_PATH / benchmark_name / BENCHMARKS_DATA_FILE_NAME for benchmark_name in Benchmark.values()]
 
 def get_powerset(iterable):
     s = list(iterable)
@@ -380,7 +383,7 @@ def gen_evaluation(df, main_tool, all_tools, timeout_time=120, benchmark_name=No
         continue
       to_cmp2.append({'x': main_tool.value, 'y': t.value,
           #'xname': Tool.noodler.value[:Tool.noodler.value.rfind("-")] ,
-          'xname': "Tool",
+          'xname': "Z3-Noodler",
           'yname': t.value,
           'max': TIMEOUT_VAL, 'tickCount': 3})
       
@@ -557,23 +560,23 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
     # Rename Noodler to Tool.
     for col in dfs_all.columns:
         if re.search(r"z3-noodler-common", col):
-            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
             dfs_all.rename(columns={ col: col_split }, inplace=True)
 
     for col in dfs_all.columns:
         if re.search(r"z3-noodler", col):
-            col_split = re.sub(r"z3-noodler", "Tool", col)
+            col_split = re.sub(r"z3-noodler", "Z3-Noodler", col)
             dfs_all.rename(columns={ col: col_split }, inplace=True)
 
     tools_names = [tool.value for tool in tools_to_print]
     for i, col in enumerate(tools_names):
         if re.search(r"z3-noodler-common", col):
-            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
             tools_names[i] = col_split
     tools_virtual_names = [tool.value for tool in tools_for_virtual_best_solver]
     for i, col in enumerate(tools_virtual_names):
         if re.search(r"z3-noodler-common", col):
-            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
             tools_virtual_names[i] = col_split
 
     tools_to_print_columns = [f"{tool}-runtime" for tool in tools_names]
@@ -596,18 +599,18 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
             tools_virtual_names = [tool.value for tool in permutation]
             for i, col in enumerate(tools_virtual_names):
                 if re.search(r"z3-noodler-common", col):
-                    col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                    col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
                     tools_virtual_names[i] = col_split
 
             improvement_tools = [tool.value for tool in tools_for_virtual_best_solver_improvement]
             for i, col in enumerate(improvement_tools):
                 if re.search(r"z3-noodler-common", col):
-                    col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                    col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
                     improvement_tools[i] = col_split
             tools = [tool for tool in improvement_tools + tools_virtual_names]
             for i, col in enumerate(tools):
                  if re.search(r"z3-noodler-common", col):
-                    col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                    col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
                     tools[i] = col_split
                  #print(tools[i])
             tool_runtime_names = [f"{tool}-runtime" for tool in tools]
@@ -621,7 +624,7 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
             special_virt_solver_names = [f"{tool.value}-runtime" for tool in [Tool.noodler_common, Tool.cvc5]]
             for i, col in enumerate(special_virt_solver_names):
                 if re.search(r"z3-noodler-common", col):
-                    col_split = re.sub(r"z3-noodler-common", "Tool", col)
+                    col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
                     special_virt_solver_names[i] = col_split
             virtual_best_improvement_name = '+'.join([f"{tool.value}" for tool in [Tool.noodler_common, Tool.cvc5]])
             # print(dfs_all.columns)
@@ -646,7 +649,7 @@ def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual
     # Rename Noodler to Tool.
     for col in dfs_tools.columns:
         if re.search(r"z3-noodler-common", col):
-            col_split = re.sub(r"z3-noodler-common", "Tool", col)
+            col_split = re.sub(r"z3-noodler-common", "Z3-Noodler", col)
 
             dfs_tools.rename(columns={ col: col_split }, inplace=True)
 
