@@ -517,10 +517,6 @@ def create_dfs(files, noodler_version, noodler_underapprox_version):
             df["z3-noodler-common-result"] = df[noodler_version.value + "-result"]
             #dfs_underapprox[benchmark_name] = df
             dfs_normal[benchmark_name] = df
-        if benchmark_name in ["kaluza"]:
-            df["z3-noodler-common-runtime"] = df[noodler_underapprox_version.value + "-runtime"]
-            df["z3-noodler-common-result"] = df[noodler_underapprox_version.value + "-result"]
-            dfs_underapprox[benchmark_name] = df
         else:
             df["z3-noodler-common-runtime"] = df[noodler_version.value + "-runtime"]
             df["z3-noodler-common-result"] = df[noodler_version.value + "-result"]
@@ -528,11 +524,9 @@ def create_dfs(files, noodler_version, noodler_underapprox_version):
         dfs[benchmark_name] = df
     df_normal = pd.concat(dfs_normal)
     sanity_check(df_normal)
-    dfs_normal["kaluza"] = dfs["kaluza"]
     df_all = pd.concat(dfs_normal)
-    df_underapprox = pd.concat(dfs_underapprox)
 
-    return dfs, df_all, df_normal, df_underapprox
+    return dfs, df_all, df_normal
 
 
 def generate_cactus_plot_csvs(dfs, tools_to_print: list[Tool], tools_for_virtual_best_solver: list[Tool],
@@ -673,7 +667,7 @@ def generate_requested_cactus_plots():
     pass
 
 
-dfs, df_all, df_normal, df_underapprox = create_dfs(FILES + [BENCHMARKS_FOLDER_PATH / "regex" / BENCHMARKS_DATA_FILE_NAME], Tool.noodler, Tool.noodler_underapprox)
+dfs, df_all, df_normal = create_dfs([BENCHMARKS_FOLDER_PATH / "regex" / BENCHMARKS_DATA_FILE_NAME], Tool.noodler, Tool.noodler_underapprox)
 
 
 if __name__ == "__main__":
