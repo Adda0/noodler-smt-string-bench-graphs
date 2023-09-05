@@ -48,8 +48,8 @@ def read_file(filename):
         filename,
         sep=";",
         comment="#",
-        #na_values=['ERR', 'TO', 'MISSING'],
-        #na_values=['TO'],
+        # na_values=['ERR', 'TO', 'MISSING'],
+        # na_values=['TO'],
         )
 
     for col in df_loc.columns:
@@ -71,7 +71,6 @@ def read_file(filename):
 # For printing scatter plots
 def scatter_plot(df, xcol, ycol, domain, xname=None, yname=None, log=False, width=6, height=6, clamp=True, tickCount=5, show_legend=False):
     assert len(domain) == 2
-
     POINT_SIZE = 1.0
     DASH_PATTERN = (0, (6, 2))
 
